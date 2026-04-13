@@ -1,0 +1,42 @@
+# CODEOWNERS
+# Each line is a file pattern followed by one or more owners. Owners are automatically requested for review when someone opens a pull request that changes matching files.
+
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ─────────────────────────────────────────────────────────────
+# Default owner for everything in the repo
+# ─────────────────────────────────────────────────────────────
+
+*                                               @sir-siren
+
+# ─────────────────────────────────────────────────────────────
+# Zig implementation
+# ─────────────────────────────────────────────────────────────
+
+/qrZig/                                         @sir-siren
+
+# ─────────────────────────────────────────────────────────────
+# Rust Implementation
+# ─────────────────────────────────────────────────────────────
+
+/qrRust/                                        @sir-siren
+
+# ─────────────────────────────────────────────────────────────
+# Editor and tooling configuration
+# ─────────────────────────────────────────────────────────────
+
+/.vscode/                                       @sir-siren
+/.editorconfig                                  @sir-siren
+/.gitignore                                     @sir-siren
+
+# ─────────────────────────────────────────────────────────────
+# Community health files
+# ─────────────────────────────────────────────────────────────
+
+/README.md                                      @sir-siren
+/CODE_OF_CONDUCT.md                             @sir-siren
+/SECURITY.md                                    @sir-siren
+/SUPPORT.md                                     @sir-siren
+/LICENSE                                        @sir-siren
+/CODEOWNERS                                     @sir-siren
+/CITATION.cff                                   @sir-siren

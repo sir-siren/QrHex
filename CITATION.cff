@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: qrhex
+message: >
+    If you use this software in your work, please cite it using the
+    information below.
+type: software
+authors:
+    - alias: siren
+version: 0.1.0
+date-released: "2026-04-13"
+license: MIT
+repository-code: https://github.com/sir-siren/qrhex
+abstract: >
+    A minimal command line tool for viewing and patching binary files at
+    the byte level. Ships as two standalone implementations in Zig and
+    Rust with no external dependencies.
+keywords:
+    - hex editor
+    - cli
+    - binary
+    - zig
+    - rust
+    - qr code
