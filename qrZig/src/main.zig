@@ -50,7 +50,6 @@ fn readFile(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
 }
 
 fn writeFile(alloc: std.mem.Allocator, path: []const u8, data: []const u8) !void {
-    // Build temp path alongside the target: "<path>.qrhex.tmp"
     const tmp_path = try std.fmt.allocPrint(alloc, "{s}.qrhex.tmp", .{path});
     defer alloc.free(tmp_path);
 
@@ -115,7 +114,7 @@ fn errorMessage(err: anyerror) []const u8 {
         error.AccessDenied => "permission denied",
         error.FileBusy => "file is busy",
         error.NoSpaceLeft => "no space left on device",
-        error.BadUsage => "", // already printed USAGE
+        error.BadUsage => "",
         else => @errorName(err),
     };
 }
