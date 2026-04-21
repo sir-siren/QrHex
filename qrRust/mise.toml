@@ -1,0 +1,14 @@
+[tools]
+rust = "1.95.0"
+
+[tasks.dev]
+description = "Debug build"
+run = "cargo build"
+
+[tasks.build]
+description = "Optimized build"
+run = "cargo build --release"
+
+[tasks.preview]
+description = "Run the optimized binary"
+run = "cargo run --release -- view ../public/cat.png"

@@ -1,0 +1,14 @@
+[tools]
+go = "1.26.2"
+
+[tasks.dev]
+description = "Run from source"
+run = "go run . view ../public/cat.png"
+
+[tasks.build]
+description = "Optimized build"
+run = "go build -o qrhex ."
+
+[tasks.preview]
+description = "Run the compiled binary"
+run = "go run . view ../public/cat.png"

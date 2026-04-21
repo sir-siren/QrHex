@@ -15,7 +15,10 @@
         <img alt="Zig" src="https://img.shields.io/badge/Zig-0.15.2-F7D080?style=flat&logo=zig&logoColor=F7D080" />
     </a>
     <a href="https://www.rust-lang.org">
-        <img alt="Rust" src="https://img.shields.io/badge/Rust-edition%202024-DEA584?style=flat&logo=rust&logoColor=FF9170" />
+        <img alt="Rust" src="https://img.shields.io/badge/Rust-1.95.0-DEA584?style=flat&logo=rust&logoColor=FF9170" />
+    </a>
+    <a href="https://go.dev">
+        <img alt="Go" src="https://img.shields.io/badge/Go-1.26.2-00ADD8?style=flat&logo=go&logoColor=00ADD8" />
     </a>
     <a>
         <img alt="Zero dependencies" src="https://img.shields.io/badge/dependencies-none-B5EAD7?style=flat" />
@@ -23,41 +26,48 @@
     <a href="./LICENSE">
         <img alt="License" src="https://img.shields.io/badge/license-MIT-AEC6CF?style=flat" />
     </a>
-
 </p>
 
 ## 📖 Overview
 
-**QrHex** has two commands: `view` prints any binary file as a hex table, and `patch` overwrites one byte at any position. Both implementations use stdlib only with no external libraries.
+**QrHex** has two commands: `view` prints any binary file as a hex table, and `patch` overwrites one byte at any position. All implementations use stdlib only with no external libraries.
 
-Two versions of the same tool:
+Three versions of the same tool:
 
-| Version    | Folder                   | Language                       |
-| :--------- | :----------------------- | :----------------------------- |
-| **qrZig**  | [`./qrZig/`](./qrZig/)   | Zig 0.15.2, stdlib only        |
-| **qrRust** | [`./qrRust/`](./qrRust/) | Rust edition 2024, stdlib only |
+| Version    | Folder                   | Language                 |
+| :--------- | :----------------------- | :----------------------- |
+| **qrZig**  | [`./qrZig/`](./qrZig/)   | Zig 0.15.2, stdlib only  |
+| **qrRust** | [`./qrRust/`](./qrRust/) | Rust 1.95.0, stdlib only |
+| **qrGo**   | [`./qrGo/`](./qrGo/)     | Go 1.26.2, stdlib only   |
 
 ## 📂 Repository Structure
 
 ```bash
- .
-├──  public
-│   └──  QrHex.png
-├──  qrRust
-│   ├── 󰣞  src
-│   │   └──  main.rs
-│   ├──  Cargo.lock
-│   └──  Cargo.toml
-├──  qrZig
-│   ├── 󰣞  src
-│   │   └──  main.zig
-│   ├──  build.zig
-│   └──  build.zig.zon
-├──  CITATION.cff
-├──  CODE_OF_CONDUCT.md
-├── 󰡯 CODEOWNERS
-├──  LICENSE
-└── 󰂺 README.md
+.
+├── public
+│   ├── cat.png
+│   └── QrHex.png
+├── qrGo
+│   ├── go.mod
+│   ├── main.go
+│   └── mise.toml
+├── qrRust
+│   ├── src
+│   │   └── main.rs
+│   ├── Cargo.lock
+│   ├── Cargo.toml
+│   └── mise.toml
+├── qrZig
+│   ├── src
+│   │   └── main.zig
+│   ├── build.zig
+│   ├── build.zig.zon
+│   └── mise.toml
+├── CITATION.cff
+├── CODE_OF_CONDUCT.md
+├── CODEOWNERS
+├── LICENSE
+└── README.md
 ```
 
 ## ⌨️ Commands
@@ -98,20 +108,86 @@ patched: offset 0x00000018 (24) -> 0x00
 - `byte` is a **hex** value — example: `ff`
 
 > [!NOTE]
-> Both versions load the whole file into memory. Files larger than **10 MB** will be rejected.
+> All versions load the whole file into memory. Files larger than **10 MB** will be rejected.
 
 ## 🚀 Getting Started
 
+### Install mise
+
+Each project folder has a `mise.toml` that pins the exact toolchain version. Install [mise](https://mise.jdx.dev) once and it handles the rest.
+
+**macOS / Linux**
+
+```sh
+curl https://mise.run | sh
+```
+
+**Homebrew**
+
+```sh
+brew install mise
+```
+
+**Windows**
+
+```powershell
+winget install jdx.mise
+```
+
+**Ubuntu / Debian (apt)**
+
+```sh
+sudo apt update -y && sudo apt install -y curl
+sudo install -dm 755 /etc/apt/keyrings
+curl -fsSL https://mise.jdx.dev/gpg-key.pub | sudo tee /etc/apt/keyrings/mise-archive-keyring.asc > /dev/null
+echo "deb [signed-by=/etc/apt/keyrings/mise-archive-keyring.asc] https://mise.jdx.dev/deb stable main" | sudo tee /etc/apt/sources.list.d/mise.list
+sudo apt update -y && sudo apt install -y mise
+```
+
+### Activate mise in your shell
+
+Skip this step if you installed via Homebrew — it activates automatically.
+
+```sh
+# bash
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+
+# zsh
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+
+# fish
+echo 'mise activate fish | source' >> ~/.config/fish/config.fish
+
+# PowerShell
+echo '(&mise activate pwsh) | Out-String | Invoke-Expression' >> $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+```
+
+Restart your shell, then verify everything is set up:
+
+```sh
+mise doctor
+```
+
 ### Prerequisites
 
-You only need one of the two. Pick whichever language you prefer.
+You only need one of the three. Pick whichever language you prefer — mise will install it for you.
 
-| Tool | Version      | Install                                               |
-| :--- | :----------- | :---------------------------------------------------- |
-| Zig  | `0.15.2+`    | [ziglang.org/download](https://ziglang.org/download/) |
-| Rust | edition 2024 | [rustup.rs](https://rustup.rs)                        |
+| Tool | Version  | mise name |
+| :--- | :------- | :-------- |
+| Zig  | `0.15.2` | `zig`     |
+| Rust | `1.95.0` | `rust`    |
+| Go   | `1.26.2` | `go`      |
 
 ## ⚡ Zig Version
+
+### Setup
+
+```sh
+cd qrZig
+
+# install the pinned Zig version
+mise install
+```
 
 ### Verify install
 
@@ -120,20 +196,17 @@ zig version
 # expected: 0.15.2
 ```
 
-### Setup
+### Tasks
 
-```sh
-cd qrZig
+```bash
+mise run build
+./zig-out/bin/qrhex view ../public/cat.png
 ```
 
-### Build
+### Build manually
 
 ```sh
-# debug
 zig build
-
-# optimized
-zig build -Doptimize=ReleaseSafe
 ```
 
 Output binary: `zig-out/bin/qrhex`
@@ -142,30 +215,42 @@ Output binary: `zig-out/bin/qrhex`
 
 ```sh
 # through the build system
-zig build run -- view qr.png
-zig build run -- patch qr.png 24 ff
+zig build run -- view ../public/cat.png
+zig build run -- patch ../public/cat.png 24 ff
 
 # or run the binary directly
-./zig-out/bin/qrhex view qr.png
-./zig-out/bin/qrhex patch qr.png 24 ff
+./zig-out/bin/qrhex view ../public/cat.png
+./zig-out/bin/qrhex patch ../public/cat.png 24 ff
 ```
 
 ## 🦀 Rust Version
+
+### Setup
+
+```sh
+cd qrRust
+
+# install the pinned Rust version
+mise install
+```
 
 ### Verify install
 
 ```sh
 rustc --version
 cargo --version
+# expected: rustc 1.95.0
 ```
 
-### Setup
+### Tasks
 
 ```sh
-cd qrRust
+mise run dev      # debug build
+mise run build    # optimized build (--release)
+mise run preview  # build and run view on cat.png
 ```
 
-### Build
+### Build manually
 
 ```sh
 # debug
@@ -186,15 +271,62 @@ Output binaries:
 
 ```sh
 # through cargo
-cargo run -- view qr.png
-cargo run -- patch qr.png 24 ff
-
-# optimized
-cargo run --release -- view qr.png
+cargo run -- view ../public/cat.png
+cargo run -- patch ../public/cat.png 24 ff
 
 # or run the binary directly
-./target/debug/qrhex view qr.png
-./target/debug/qrhex patch qr.png 24 ff
+./target/release/qrhex view ../public/cat.png
+./target/release/qrhex patch ../public/cat.png 24 ff
+```
+
+## 🐹 Go Version
+
+### Setup
+
+```sh
+cd qrGo
+
+# install the pinned Go version
+mise install
+```
+
+### Verify install
+
+```sh
+go version
+# expected: go1.26.2
+```
+
+### Tasks
+
+```sh
+mise run dev      # debug build
+mise run build    # optimized build (-ldflags="-s -w")
+mise run preview  # build and run view on cat.png
+```
+
+### Build manually
+
+```sh
+# debug
+go build -o qrhex .
+
+# optimized (trimmed binary, no debug info)
+go build -ldflags="-s -w" -o qrhex .
+```
+
+Output binary: `./qrhex`
+
+### Run
+
+```sh
+# through go run (no build step)
+go run . view ../public/cat.png
+go run . patch ../public/cat.png 24 ff
+
+# or run the binary directly
+./qrhex view ../public/cat.png
+./qrhex patch ../public/cat.png 24 ff
 ```
 
 ## 🔬 How QR PNG Files Are Structured
@@ -223,5 +355,5 @@ To change the actual content of a QR code, use these tools instead:
 This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for details.
 
 <p align="center">
-  <sub>Built with 🦀 and ⚡</sub>
+  <sub>Built with 🦀 ⚡ and 🐹</sub>
 </p>

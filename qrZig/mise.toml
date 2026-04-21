@@ -1,0 +1,14 @@
+[tools]
+zig = "0.15.2"
+
+[tasks.dev]
+description = "Debug build and run"
+run = "zig build run -- view ../public/cat.png"
+
+[tasks.build]
+description = "Optimized build"
+run = "zig build -Doptimize=ReleaseSafe"
+
+[tasks.preview]
+description = "Run the optimized binary"
+run = "zig build run -Doptimize=ReleaseSafe -- view ../public/cat.png"
