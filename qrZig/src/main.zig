@@ -49,15 +49,11 @@ fn readFile(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
     return file.readToEndAlloc(alloc, MAX_FILE_SIZE);
 }
 
-// FIX [HIGH-001]: atomic write via temp file + rename.
-// If the process is killed mid-write the original file is untouched.
-// Rename is atomic on POSIX (same filesystem) and Windows.
 fn writeFile(alloc: std.mem.Allocator, path: []const u8, data: []const u8) !void {
     // Build temp path alongside the target: "<path>.qrhex.tmp"
     const tmp_path = try std.fmt.allocPrint(alloc, "{s}.qrhex.tmp", .{path});
     defer alloc.free(tmp_path);
 
-    // Write to temp. Use errdefer so a failed write cleans up the temp file.
     {
         const tmp_file = try std.fs.cwd().createFile(tmp_path, .{ .truncate = true });
         errdefer std.fs.cwd().deleteFile(tmp_path) catch {};
@@ -65,7 +61,6 @@ fn writeFile(alloc: std.mem.Allocator, path: []const u8, data: []const u8) !void
         try tmp_file.writeAll(data);
     }
 
-    // Atomic swap. If this fails, temp file is left behind but original is safe.
     try std.fs.rename(std.fs.cwd(), tmp_path, std.fs.cwd(), path);
 }
 
@@ -111,8 +106,6 @@ fn patchByte(data: []u8, offset: usize, val: u8) !void {
     data[offset] = val;
 }
 
-// FIX [MED-003]: map internal Zig error names to human-readable messages
-// before falling back to @errorName for unexpected errors.
 fn errorMessage(err: anyerror) []const u8 {
     return switch (err) {
         error.NotEnoughArgs => "not enough arguments",
