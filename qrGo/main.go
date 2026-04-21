@@ -4,7 +4,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"unicode"
@@ -53,11 +55,14 @@ func parseArgs(argv []string) (args, error) {
 		}
 
 		offset, err := strconv.Atoi(argv[3])
-		if err != nil {
-			return args{}, fmt.Errorf("invalid offset %q: expected decimal integer", argv[3])
+		// FIX [LOW-001]: reject negative offsets at parse time, not deep in patchByte
+		if err != nil || offset < 0 {
+			return args{}, fmt.Errorf("invalid offset %q: expected non-negative decimal integer", argv[3])
 		}
 
-		decoded, err := hex.DecodeString(strings.TrimPrefix(argv[4], "0x"))
+		// FIX: strip both "0x" and "0X" prefixes for consistency with Go version
+		hexStr := strings.TrimPrefix(strings.TrimPrefix(argv[4], "0x"), "0X")
+		decoded, err := hex.DecodeString(hexStr)
 		if err != nil || len(decoded) != 1 {
 			return args{}, fmt.Errorf("invalid byte %q: expected hex value e.g. ff", argv[4])
 		}
@@ -74,26 +79,70 @@ func parseArgs(argv []string) (args, error) {
 	}
 }
 
+// readFile opens the file once and checks size on the same handle, eliminating
+// the Stat+ReadFile TOCTOU window. [FIX MED-001]
 func readFile(path string) ([]byte, error) {
-	info, err := os.Stat(path)
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot access %q: %w", path, err)
+		return nil, fmt.Errorf("cannot open %q: %w", path, err)
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("cannot stat %q: %w", path, err)
 	}
 	if info.Size() > maxFileSize {
 		return nil, fmt.Errorf("file too large (max %d bytes)", maxFileSize)
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %q: %w", path, err)
 	}
 	return data, nil
 }
 
+// writeFile writes atomically: creates a temp file in the same directory,
+// writes data, then renames it over the original. Rename is atomic on POSIX
+// and Windows (same filesystem), so a crash mid-write cannot corrupt the
+// original. Original permissions are preserved. [FIX HIGH-001, MED-002]
 func writeFile(path string, data []byte) error {
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write %q: %w", path, err)
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("cannot stat %q: %w", path, err)
 	}
+	perm := info.Mode().Perm()
+
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".qrhex-*.tmp")
+	if err != nil {
+		return fmt.Errorf("cannot create temp file in %q: %w", dir, err)
+	}
+	tmpName := tmp.Name()
+
+	committed := false
+	defer func() {
+		if !committed {
+			tmp.Close()
+			os.Remove(tmpName)
+		}
+	}()
+
+	if err := tmp.Chmod(perm); err != nil {
+		return fmt.Errorf("cannot set permissions on temp file: %w", err)
+	}
+	if _, err := tmp.Write(data); err != nil {
+		return fmt.Errorf("failed to write temp file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to close temp file: %w", err)
+	}
+	if err := os.Rename(tmpName, path); err != nil {
+		return fmt.Errorf("failed to replace %q: %w", path, err)
+	}
+
+	committed = true
 	return nil
 }
 
@@ -111,7 +160,7 @@ func printHexDump(data []byte) {
 			fmt.Printf("%02x ", b)
 		}
 
-		// Pad short final row to keep the text column aligned
+		// Pad the final short row so the ASCII column stays aligned.
 		pad := bytesPerRow - len(row)
 		if pad > 0 {
 			if len(row) <= 8 {
@@ -135,6 +184,8 @@ func printHexDump(data []byte) {
 }
 
 func patchByte(data []byte, offset int, val byte) error {
+	// Negative-offset guard is now redundant (caught at parse time) but kept
+	// as a defensive check since patchByte is a public-ish function.
 	if offset < 0 || offset >= len(data) {
 		return fmt.Errorf("offset %d out of range (file is %d bytes)", offset, len(data))
 	}

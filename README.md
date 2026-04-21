@@ -42,7 +42,7 @@ Three versions of the same tool:
 
 ## 📂 Repository Structure
 
-```bash
+```
 .
 ├── public
 │   ├── cat.png
@@ -81,7 +81,7 @@ qrhex patch <file> <offset> <byte>
 
 Prints the file as a hex table. 16 bytes per row with a text preview on the right.
 
-```bash
+```
 00000000  89 50 4e 47 0d 0a 1a 0a  00 00 00 0d 49 48 44 52  |.PNG........IHDR|
 00000010  00 00 00 21 00 00 00 21  08 02 00 00 00 49 b8 d6  |...!...!.....I..|
 00000020  65 00 00 00 09 70 48 59  73 00 00 0e c4 00 00 0e  |e....pHYs.......|
@@ -93,9 +93,11 @@ Prints the file as a hex table. 16 bytes per row with a text preview on the righ
 
 Changes one byte at a given position and saves the file.
 
-```bash
+```
 patched: offset 0x00000018 (24) -> 0x00
 ```
+
+Patch writes atomically — it creates a temporary file alongside the target, writes to it, then renames it over the original. If the process is interrupted mid-write, the original file is left untouched.
 
 ### Command reference
 
@@ -105,7 +107,7 @@ patched: offset 0x00000018 (24) -> 0x00
 | `patch` | `<file> <offset> <byte>` | Write one byte at the given position |
 
 - `offset` is a **decimal** number — example: `24`
-- `byte` is a **hex** value — example: `ff`
+- `byte` is a **hex** value — example: `ff` or `0xff`
 
 > [!NOTE]
 > All versions load the whole file into memory. Files larger than **10 MB** will be rejected.
@@ -184,8 +186,6 @@ You only need one of the three. Pick whichever language you prefer — mise will
 
 ```sh
 cd qrZig
-
-# install the pinned Zig version
 mise install
 ```
 
@@ -198,15 +198,20 @@ zig version
 
 ### Tasks
 
-```bash
-mise run build
-./zig-out/bin/qrhex view ../public/cat.png
+```sh
+mise run dev      # debug build, run view on cat.png
+mise run build    # optimized build (ReleaseSafe)
+mise run preview  # optimized build, run view on cat.png
 ```
 
 ### Build manually
 
 ```sh
+# debug
 zig build
+
+# optimized
+zig build -Doptimize=ReleaseSafe
 ```
 
 Output binary: `zig-out/bin/qrhex`
@@ -214,11 +219,11 @@ Output binary: `zig-out/bin/qrhex`
 ### Run
 
 ```sh
-# through the build system
+# through the build system (works on all platforms)
 zig build run -- view ../public/cat.png
 zig build run -- patch ../public/cat.png 24 ff
 
-# or run the binary directly
+# or run the binary directly (Unix / macOS / Git Bash)
 ./zig-out/bin/qrhex view ../public/cat.png
 ./zig-out/bin/qrhex patch ../public/cat.png 24 ff
 ```
@@ -229,8 +234,6 @@ zig build run -- patch ../public/cat.png 24 ff
 
 ```sh
 cd qrRust
-
-# install the pinned Rust version
 mise install
 ```
 
@@ -247,7 +250,7 @@ cargo --version
 ```sh
 mise run dev      # debug build
 mise run build    # optimized build (--release)
-mise run preview  # build and run view on cat.png
+mise run preview  # run optimized binary on cat.png
 ```
 
 ### Build manually
@@ -270,11 +273,11 @@ Output binaries:
 ### Run
 
 ```sh
-# through cargo
+# through cargo (works on all platforms)
 cargo run -- view ../public/cat.png
 cargo run -- patch ../public/cat.png 24 ff
 
-# or run the binary directly
+# or run the binary directly (Unix / macOS / Git Bash)
 ./target/release/qrhex view ../public/cat.png
 ./target/release/qrhex patch ../public/cat.png 24 ff
 ```
@@ -285,8 +288,6 @@ cargo run -- patch ../public/cat.png 24 ff
 
 ```sh
 cd qrGo
-
-# install the pinned Go version
 mise install
 ```
 
@@ -300,31 +301,27 @@ go version
 ### Tasks
 
 ```sh
-mise run dev      # debug build
-mise run build    # optimized build (-ldflags="-s -w")
-mise run preview  # build and run view on cat.png
+mise run dev      # run from source (no build step)
+mise run build    # compile binary
+mise run preview  # run from source on cat.png
 ```
 
 ### Build manually
 
 ```sh
-# debug
 go build -o qrhex .
-
-# optimized (trimmed binary, no debug info)
-go build -ldflags="-s -w" -o qrhex .
 ```
 
-Output binary: `./qrhex`
+Output binary: `qrhex` (or `qrhex.exe` on Windows)
 
 ### Run
 
 ```sh
-# through go run (no build step)
+# through go run (works on all platforms, no build step)
 go run . view ../public/cat.png
 go run . patch ../public/cat.png 24 ff
 
-# or run the binary directly
+# or run the binary directly (Unix / macOS / Git Bash)
 ./qrhex view ../public/cat.png
 ./qrhex patch ../public/cat.png 24 ff
 ```

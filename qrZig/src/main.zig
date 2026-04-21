@@ -49,10 +49,24 @@ fn readFile(alloc: std.mem.Allocator, path: []const u8) ![]u8 {
     return file.readToEndAlloc(alloc, MAX_FILE_SIZE);
 }
 
-fn writeFile(path: []const u8, data: []const u8) !void {
-    const file = try std.fs.cwd().createFile(path, .{ .truncate = true });
-    defer file.close();
-    try file.writeAll(data);
+// FIX [HIGH-001]: atomic write via temp file + rename.
+// If the process is killed mid-write the original file is untouched.
+// Rename is atomic on POSIX (same filesystem) and Windows.
+fn writeFile(alloc: std.mem.Allocator, path: []const u8, data: []const u8) !void {
+    // Build temp path alongside the target: "<path>.qrhex.tmp"
+    const tmp_path = try std.fmt.allocPrint(alloc, "{s}.qrhex.tmp", .{path});
+    defer alloc.free(tmp_path);
+
+    // Write to temp. Use errdefer so a failed write cleans up the temp file.
+    {
+        const tmp_file = try std.fs.cwd().createFile(tmp_path, .{ .truncate = true });
+        errdefer std.fs.cwd().deleteFile(tmp_path) catch {};
+        defer tmp_file.close();
+        try tmp_file.writeAll(data);
+    }
+
+    // Atomic swap. If this fails, temp file is left behind but original is safe.
+    try std.fs.rename(std.fs.cwd(), tmp_path, std.fs.cwd(), path);
 }
 
 fn printHexDump(data: []const u8) !void {
@@ -97,9 +111,29 @@ fn patchByte(data: []u8, offset: usize, val: u8) !void {
     data[offset] = val;
 }
 
+// FIX [MED-003]: map internal Zig error names to human-readable messages
+// before falling back to @errorName for unexpected errors.
+fn errorMessage(err: anyerror) []const u8 {
+    return switch (err) {
+        error.NotEnoughArgs => "not enough arguments",
+        error.UnknownCmd => "unknown command",
+        error.OffsetOutOfRange => "offset is out of range for this file",
+        error.FileNotFound => "file not found",
+        error.AccessDenied => "permission denied",
+        error.FileBusy => "file is busy",
+        error.NoSpaceLeft => "no space left on device",
+        error.BadUsage => "", // already printed USAGE
+        else => @errorName(err),
+    };
+}
+
 fn run(alloc: std.mem.Allocator, argv: [][:0]u8) !void {
-    const args = parseArgs(argv) catch {
-        std.debug.print(USAGE, .{});
+    const args = parseArgs(argv) catch |err| {
+        const msg = errorMessage(err);
+        if (msg.len > 0) {
+            std.debug.print("error: {s}\n\n", .{msg});
+        }
+        std.debug.print("{s}", .{USAGE});
         return error.BadUsage;
     };
 
@@ -111,7 +145,7 @@ fn run(alloc: std.mem.Allocator, argv: [][:0]u8) !void {
 
         .patch => {
             try patchByte(data, args.offset, args.byte_val);
-            try writeFile(args.file, data);
+            try writeFile(alloc, args.file, data);
 
             var buf: [128]u8 = undefined;
             var w = std.fs.File.stdout().writer(&buf);
@@ -135,7 +169,7 @@ pub fn main() !void {
 
     run(alloc, argv) catch |err| {
         if (err != error.BadUsage) {
-            std.debug.print("error: {s}\n", .{@errorName(err)});
+            std.debug.print("error: {s}\n", .{errorMessage(err)});
         }
         std.process.exit(1);
     };
