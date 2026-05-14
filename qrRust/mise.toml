@@ -1,3 +1,6 @@
+[settings]
+windows_default_inline_shell_args = "bash -c"
+
 [tools]
 rust = "1.95.0"
 
@@ -5,11 +8,37 @@ rust = "1.95.0"
 description = "Debug build"
 run = "cargo build"
 
+[tasks."dev:view"]
+description = "Debug build then hex-view a file"
+depends = ["dev"]
+run = "./target/debug/qrhex view ../public/cat.png"
+
+[tasks."dev:start"]
+description = "Run debug binary with cargo"
+run = "cargo run -- view ../public/cat.png"
+
 [tasks.build]
 description = "Build optimised release binary for your CPU"
 alias = "b"
 run = 'RUSTFLAGS="-C target-cpu=native" cargo build --release'
 
 [tasks.start]
-description = "Run the optimized binary"
-run = "cargo run --release -- view ../public/cat.png"
+description = "Run the optimized release binary"
+depends = ["build"]
+run = "./target/release/qrhex view ../public/cat.png"
+
+[tasks.check]
+description = "Type and borrow check -- fast"
+run = "cargo check"
+
+[tasks.lint]
+description = "Clippy with warnings as errors"
+run = "cargo clippy --all-targets -- -D warnings"
+
+[tasks.test]
+description = "Run all tests"
+run = "cargo test --workspace"
+
+[tasks.verify]
+description = "Full pre-ship checklist -- check, lint, test, release build"
+depends = ["check", "lint", "test", "build"]
