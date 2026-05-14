@@ -1,8 +1,28 @@
+# rust 1.85+ required (edition 2024)
 [package]
 name = "qrhex"
 version = "1.0.0"
 edition = "2024"
+rust-version = "1.85"
 
 [[bin]]
 name = "qrhex"
 path = "src/main.rs"
+
+[dependencies]
+thiserror = "2"
+
+[profile.dev]
+opt-level = 1
+debug = true
+incremental = true
+overflow-checks = true
+
+[profile.release]
+# "z" = optimize for binary size over raw throughput -- intentional for a terminal tool
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+overflow-checks = false
+panic = "abort"

@@ -6,9 +6,10 @@ description = "Debug build"
 run = "cargo build"
 
 [tasks.build]
-description = "Optimized build"
-run = "cargo build --release"
+description = "Build optimised release binary for your CPU"
+alias = "b"
+run = 'RUSTFLAGS="-C target-cpu=native" cargo build --release'
 
-[tasks.preview]
+[tasks.start]
 description = "Run the optimized binary"
 run = "cargo run --release -- view ../public/cat.png"
